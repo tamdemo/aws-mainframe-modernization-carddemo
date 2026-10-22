@@ -94,6 +94,33 @@ class Cbact03cTest {
     }
 
     @Test
+    void readAbendClosesTheFile() throws IOException {
+        XrefFile file = new XrefFile(fixedFile(REC1 + REC2.substring(0, 20)), EBCDIC, XrefFile.RecordFormat.FIXED);
+
+        assertThrows(AbendException.class, () -> run(file));
+
+        assertEquals(XrefFile.STATUS_NOT_OPEN_FOR_CLOSE, file.close());
+    }
+
+    @Test
+    void recordThatDecodesToTheWrongLengthIsAReadErrorWithStatus04() throws IOException {
+        // 50 bytes, but the two-byte UTF-8 'é' makes it 49 characters.
+        String rec = "0500024453765740000000050000000000509" + "é" + " ".repeat(11);
+        Path path = Files.createTempFile("cardxref", ".txt");
+        path.toFile().deleteOnExit();
+        Files.write(path, rec.getBytes(StandardCharsets.UTF_8));
+
+        assertThrows(AbendException.class,
+                () -> run(new XrefFile(path, StandardCharsets.UTF_8, XrefFile.RecordFormat.FIXED)));
+
+        assertEquals(List.of(
+                "START OF EXECUTION OF PROGRAM CBACT03C",
+                "ERROR READING XREFFILE",
+                "FILE STATUS IS: NNNN0004",
+                "ABENDING PROGRAM"), lines());
+    }
+
+    @Test
     void keyOutOfSequenceIsAReadErrorWithStatus30() throws IOException {
         Path file = fixedFile(REC2 + REC1);
 

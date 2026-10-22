@@ -118,8 +118,13 @@ public final class XrefFile {
                 return diagnose(STATUS_PERMANENT_ERROR, "key out of sequence or duplicate: '"
                         + new String(key, charset) + "' after '" + new String(previousKey, charset) + "'");
             }
+            String decoded = new String(raw, charset);
+            if (decoded.length() != CardXrefRecord.RECORD_LENGTH) {
+                return diagnose(STATUS_LENGTH_MISMATCH, "record decodes to " + decoded.length()
+                        + " characters in " + charset + ", expected " + CardXrefRecord.RECORD_LENGTH);
+            }
             previousKey = key;
-            record = new String(raw, charset);
+            record = decoded;
             return STATUS_OK;
         } catch (IOException e) {
             return diagnose(STATUS_PERMANENT_ERROR, e.toString());

@@ -64,14 +64,20 @@ public final class Cbact03c {
         xrefFileOpen();
 
         // PERFORM UNTIL END-OF-FILE = 'Y'
-        while (endOfFile != 'Y') {
-            if (endOfFile == 'N') {
-                xrefFileGetNext();
+        try {
+            while (endOfFile != 'Y') {
                 if (endOfFile == 'N') {
-                    // Second print of the same record (the first is inside 1000-XREFFILE-GET-NEXT).
-                    display(cardXrefRecord.toDisplayString());
+                    xrefFileGetNext();
+                    if (endOfFile == 'N') {
+                        // Second print of the same record (the first is inside 1000-XREFFILE-GET-NEXT).
+                        display(cardXrefRecord.toDisplayString());
+                    }
                 }
             }
+        } catch (AbendException abend) {
+            // An abend makes the system close the file without any SYSOUT; do the same here.
+            xrefFile.close();
+            throw abend;
         }
 
         xrefFileClose();
